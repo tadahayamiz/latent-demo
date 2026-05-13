@@ -1,101 +1,115 @@
-# template-dev
-研究開発用テンプレート
+# latent-demo
 
-AI/MLプロジェクトを開始するための標準開発テンプレート。
-日常の研究開発における効率性とコードの整理しやすさの両立を目的とする。
+Small Colab demos for latent variables, latent states, and latent representations.
 
-## 特徴
+This repository currently contains a minimal teaching demo for a pharmaceutical informatics lecture:
 
-  - **`pyproject.toml` による依存関係の一元管理**
-  - **安全な `src` レイアウトの採用**
-  - **編集可能インストール (`pip install -e .`) によるスムーズな開発**
+> **観測データから見えない個体状態を推定する：PCA・因子分析による潜在変数モデリング**
 
-## ディレクトリ構成
+The repository is intentionally small. The notebook is the student-facing entry point, while reusable code lives under `src/latent_demo`.
 
+## Student entry point
+
+Open the notebook directly in Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mizuno-group/latent-demo/blob/v0.1.0/notebooks/01_pharm_info_latent_toxicity.ipynb)
+
+Recommended instruction for students:
+
+1. Open the Colab link above.
+2. Click **Copy to Drive**.
+3. Run the cells from top to bottom.
+4. Change only the form inputs unless instructed otherwise.
+
+## Colab installation
+
+The notebook installs the package from a tagged GitHub zip:
+
+```python
+%pip install -q https://github.com/mizuno-group/latent-demo/archive/refs/tags/v0.1.0.zip
 ```
-.
-├── data/             # データ格納ディレクトリ
-├── notebooks/        # 試行錯誤用Jupyter Notebook
-├── src/
-│   └── my_project/   # Pythonパッケージのソースコード
-│       └── __init__.py
-├── .gitignore
-├── pyproject.toml    # プロジェクト定義ファイル
-└── README.md         # 説明書
-```
 
-## 利用手順
+This does not require a student GitHub account when the repository is public.
 
-### 1\. リポジトリの作成
-
-GitHub上で "Use this template" ボタンを押し, 新規リポジトリを作成する。
-
-### 2\. 環境のセットアップ
-
-ローカルにクローン後, 以下のコマンドを実行する。
+For development, you can also install from the repository root:
 
 ```bash
-# clone
-git clone -b {branch名} {URL}
-cd {repository名}
-```
-基本インストール (開発環境が整っているコンテナではこれでOK)。
-
-```bash
-# 編集可能モードでインストールすることでsrc以下の編集が即座に反映される
-pip install -e "."
+pip install -e .
 ```
 
-開発用ツールも含めたフルインストールの場合は以下 (詳細はtoml参照)
-```bash
-pip install -e ".[dev]"
-```
+## Repository structure
 
-### 3\. プロジェクト名の設定
-
-1.  `pyproject.toml` 内の `name` を変更する。
-2.  `src/my_project` ディレクトリ名を `pyproject.toml` の `name` と一致させる。
-
-## 開発フロー
-
-1.  再利用可能なコードは `src/` 以下に記述する。
-2.  実験や分析は `notebooks/` で行う。
-3.  ノートブックからは, `from my_project import ...` のように自作モジュールを直接インポートして使用できる。
-  
-***
-***
-***
-# ▼ テンプレート利用時は上記を全て削除し, 以下をプロジェクトに合わせて編集する ▼
-***
-
-# {project_name}
-short description  
-
-## Note
-This repository is under construction and will be officially released by [Mizuno group](https://github.com/mizuno-group).  
-Please contact tadahaya[at]gmail.com before publishing your paper using the contents of this repository.  
-
-## Directory Structure
-```
-.
-├── data/             # data directory
-├── notebooks/        # Jupyter Notebook
-├── src/
-│   └── my_project/   # reusable codes
-│       └── __init__.py
-├── .gitignore
+```text
+latent-demo/
 ├── pyproject.toml
-└── README.md
+├── README.md
+├── notebooks/
+│   └── 01_pharm_info_latent_toxicity.ipynb
+├── src/
+│   └── latent_demo/
+│       ├── __init__.py
+│       ├── config.py
+│       ├── data.py
+│       ├── models.py
+│       ├── metrics.py
+│       ├── plots.py
+│       ├── layout.py
+│       ├── workflow.py
+│       └── scenarios/
+│           ├── pharm_toxicity_basic.yaml
+│           ├── pharm_toxicity_noisy.yaml
+│           └── pharm_toxicity_missing.yaml
+└── tests/
+    └── test_smoke.py
+```
+
+## Demo concept
+
+The demo creates synthetic clinical-lab-like data from three hidden latent states:
+
+- 肝障害状態
+- 炎症状態
+- 骨髄抑制状態
+
+Students initially see only observed variables such as ALT, AST, CRP, WBC, PLT, and Hb. They then compare PCA and factor analysis and interpret latent axes from the loading matrix.
+
+The teaching focus is not coding. Students mainly:
+
+- run cells,
+- switch model/scenario settings,
+- inspect figures and loading tables,
+- name latent axes,
+- compare results with and without standardization,
+- optionally reveal the true hidden factors at the end.
+
+## Scenarios
+
+| Scenario | Purpose |
+|---|---|
+| `pharm_toxicity_basic` | Clean synthetic data where latent factors are relatively easy to recover |
+| `pharm_toxicity_noisy` | Higher variable-specific noise; useful for comparing PCA and factor analysis |
+| `pharm_toxicity_missing` | Includes missing values; useful for discussing preprocessing and imputation |
+
+## Instructor notes
+
+The notebook should be treated as a stable lecture handout. Development should be done in `src/latent_demo`, and the notebook should remain thin.
+
+Recommended release workflow:
+
+1. Confirm that tests pass.
+2. Push to GitHub under `mizuno-group/latent-demo`.
+3. Create a release tag such as `v0.1.0`.
+4. Use the tagged Colab URL in slides or LMS.
+
+## Test
+
+```bash
+pytest -q
 ```
 
 ## Authors
-- [YOUR NAME](LINK OF YOUR GITHUB PAGE)  
-    - main contributor  
 - [Tadahaya Mizuno](https://github.com/tadahayamiz)  
-    - correspondence  
 
 ## Contact
 If you have any questions or comments, please feel free to create an issue on github here, or email us:  
-- YOUR ADDRESS  
 - tadahaya[at]gmail.com  
-    - lead contact  

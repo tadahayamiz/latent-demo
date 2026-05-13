@@ -1,65 +1,30 @@
-# ===================================================================
-#  ビルドシステムの設定 (このセクションは基本的にこのまま使います)
-# ===================================================================
 [build-system]
-# パッケージのビルドに最低限必要なライブラリを指定します。
-requires = ["setuptools>=61.0"]
-# パッケージをビルドするためのバックエンドを指定します。
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
-
-# ===================================================================
-#  プロジェクトの基本情報
-# ===================================================================
 [project]
-# パッケージ名 (src/以下のディレクトリ名と合わせます)
-name = "my_project"
-# バージョン
+name = "latent-demo"
 version = "0.1.0"
-# プロジェクトの短い説明
-description = "A short description of the project."
-# README.mdファイルへのパス
+description = "Small Colab demos for latent variables and latent representations"
 readme = "README.md"
-# 対応するPythonのバージョン
-requires-python = ">=3.9"
-# 作者の情報
+requires-python = ">=3.10"
 authors = [
-  { name="Your Name", email="your.email@example.com" },
+  { name = "mizuno-group" }
 ]
-# ライセンス
-license = { text="MIT" }
-
-
-# -------------------------------------------------------------------
-#  依存ライブラリ (コア)
-# -------------------------------------------------------------------
-# このプロジェクトの実行に「必須」のライブラリを記述します。
-# `pip install .` でインストールされます。
 dependencies = [
-    "numpy",
-    "pandas",
-    "scikit-learn",
-    "tqdm",
-    "matplotlib",
+    "numpy>=1.23",
+    "pandas>=1.5",
+    "scipy>=1.9",
+    "scikit-learn>=1.2",
+    "matplotlib>=3.6",
+    "PyYAML>=6.0",
 ]
 
+[project.urls]
+Repository = "https://github.com/mizuno-group/latent-demo"
 
-# ===================================================================
-#  追加の依存ライブラリ
-# ===================================================================
-[project.optional-dependencies]
-# 開発時にのみ使うライブラリをここにまとめます。
-# `pip install -e ".[dev]"` のように `[dev]` を付けてインストールします。
-dev = [
-    # Notebook環境
-    "jupyterlab",
-    "ipykernel",
+[tool.setuptools.packages.find]
+where = ["src"]
 
-    # コードフォーマッタ・リンタ
-    "black",  # フォーマッタ
-    "ruff",   # リンタ & フォーマッタ
-    "isort",  # import文のソート
-
-    # テスト
-    # "pytest",
-]
+[tool.setuptools.package-data]
+"latent_demo" = ["scenarios/*.yaml"]

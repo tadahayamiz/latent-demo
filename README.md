@@ -1,43 +1,24 @@
 # latent-demo
 
-Small Colab demos for latent variables, latent states, and latent representations.
+`latent-demo` は, 潜在変数モデリングを題材にした小規模なColab実習用repoである。
 
-This repository currently contains a teaching demo for a pharmaceutical informatics lecture:
+現在は以下の講義実習を含む。
 
-> **CMap発現シグネチャから estradiol-like factor を探す：相関・DBSCAN・varimax因子抽出**
+> **CMap発現プロファイルから target-associated latent factor を探す**
 
-The repository is intentionally small. The notebook is the student-facing entry point, while reusable code lives under `src/latent_demo`.
+## 学生向け入口
 
-## Student entry point
+以下のリンクから notebook を直接 Colab で開く。
 
-Open the notebook directly in Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mizuno-group/latent-demo/blob/v0.2.2/notebooks/01_cmap_estradiol_factor_demo.ipynb)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mizuno-group/latent-demo/blob/v0.2.1/notebooks/01_cmap_estradiol_factor_demo.ipynb)
+### 手順
 
-Recommended instruction for students:
+1. 上の Colab リンクを開く。
+2. **ドライブにコピー** を押す。
+3. コピーされた notebook を上から順に実行する。
+4. 指示がある場合を除き, フォーム入力だけを変更する。
 
-1. Open the Colab link above.
-2. Click **Copy to Drive**.
-3. Run the cells from top to bottom.
-4. Change only the form inputs unless instructed otherwise.
-
-## Colab installation
-
-The notebook installs the package from a tagged GitHub zip:
-
-```python
-%pip install -q https://github.com/mizuno-group/latent-demo/archive/refs/tags/v0.2.1.zip
-```
-
-The reference data `ref_cmap.csv` is bundled inside the package, so students do not need to upload a data file during the standard lecture workflow.
-
-This does not require a student GitHub account when the repository is public.
-
-For development, you can also install from the repository root:
-
-```bash
-pip install -e .
-```
 
 ## Repository structure
 
@@ -50,70 +31,15 @@ latent-demo/
 ├── src/
 │   └── latent_demo/
 │       ├── __init__.py
-│       ├── config.py
-│       ├── data.py
 │       ├── cmap.py
+│       ├── data.py
 │       ├── models.py
-│       ├── metrics.py
 │       ├── plots.py
-│       ├── layout.py
-│       ├── workflow.py
-│       ├── datasets/
-│       │   └── ref_cmap.csv
-│       └── scenarios/
-│           ├── pharm_toxicity_basic.yaml
-│           ├── pharm_toxicity_noisy.yaml
-│           └── pharm_toxicity_missing.yaml
+│       └── datasets/
+│           └── ref_cmap.csv
 └── tests/
     └── test_smoke.py
 ```
-
-## Demo concept
-
-The demo uses a reference gene expression signature matrix:
-
-- rows: genes
-- columns: compounds/samples
-
-Students run the notebook step by step. They first inspect the data shape and head, then compute compound-compound correlations, cluster compounds with DBSCAN, extract varimax-rotated latent factors, and finally inspect the factor where `estradiol` has a high score.
-
-Expected interpretation:
-
-- high side of the estradiol-selected factor: estrogen-like compounds such as estradiol, estrone, estriol, equilin, estropipate, dienestrol, and diethylstilbestrol
-- low side of the same factor: anti-estrogen-related compounds such as tamoxifen, raloxifene, fulvestrant, and clomifene
-
-The teaching focus is not coding. Students mainly:
-
-- run cells,
-- inspect the data matrix,
-- look at compound-compound correlation,
-- interpret DBSCAN clusters,
-- inspect factor scores,
-- compare `n_components=10` and `n_components=40`,
-- discuss why factor number, rotation, and sign orientation matter.
-
-## Notes on factor extraction
-
-For Colab speed, the default factor extraction is implemented as:
-
-1. standardize genes across compounds,
-2. apply randomized PCA,
-3. apply orthogonal varimax rotation,
-4. select the factor with the largest absolute `estradiol` score,
-5. flip the sign so that `estradiol` is positive.
-
-This is used as a fast exploratory factor-analysis-style workflow. It is intended for lecture demonstration rather than final scientific inference.
-
-## Instructor notes
-
-The notebook should be treated as a stable lecture handout. It is intentionally stepwise: students should execute one cell at a time and interpret each output before moving on. Development should be done in `src/latent_demo`, and the notebook should remain thin.
-
-Recommended release workflow:
-
-1. Confirm that tests pass.
-2. Push to GitHub under `mizuno-group/latent-demo`.
-3. Create a release tag such as `v0.2.1`.
-4. Use the tagged Colab URL in slides or LMS.
 
 ## Test
 
@@ -121,8 +47,13 @@ Recommended release workflow:
 pytest -q
 ```
 
+## References
+- [the connectivity map project](https://pubmed.ncbi.nlm.nih.gov/17008526/)
+    - Lamb J, Crawford ED, Peck D, Modell JW, Blat IC, Wrobel MJ, Lerner J, Brunet JP, Subramanian A, Ross KN, Reich M, Hieronymus H, Wei G, Armstrong SA, Haggarty SJ, Clemons PA, Wei R, Carr SA, Lander ES, Golub TR. The Connectivity Map: using gene-expression signatures to connect small molecules, genes, and disease. Science. 2006 Sep 29;313(5795):1929-35. doi: 10.1126/science.1132939. PMID: 17008526.
+
 ## Authors
-- [Tadahaya Mizuno](https://github.com/tadahayamiz)  
+
+- [Tadahaya Mizuno](https://github.com/tadahayamiz)
 
 ## Contact
 If you have any questions or comments, please feel free to create an issue on github here, or email us:  

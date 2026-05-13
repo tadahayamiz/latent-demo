@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "latent-demo"
-version = "0.2.1"
+version = "0.2.2"
 description = "Small Colab demos for latent variables and compound expression signatures"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,7 +17,6 @@ dependencies = [
     "scipy>=1.9",
     "scikit-learn>=1.2",
     "matplotlib>=3.6",
-    "PyYAML>=6.0",
 ]
 
 [project.urls]
@@ -27,4 +26,4 @@ Repository = "https://github.com/mizuno-group/latent-demo"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"latent_demo" = ["scenarios/*.yaml", "datasets/*.csv"]
+"latent_demo" = ["datasets/*.csv"]

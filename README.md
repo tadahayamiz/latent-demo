@@ -1,18 +1,20 @@
 # latent-demo
 
-Small Colab demos for latent variables, latent states, and latent representations.
+Small Colab demos for latent variables and compound expression signatures.
 
-This repository currently contains a teaching demo for a pharmaceutical informatics lecture:
+This repository currently contains one teaching demo:
 
-> **CMap発現シグネチャから estradiol-like factor を探す：相関・DBSCAN・varimax因子抽出**
+> **CMap発現シグネチャから target-associated latent factor を探す**
 
 The repository is intentionally small. The notebook is the student-facing entry point, while reusable code lives under `src/latent_demo`.
 
 ## Student entry point
 
+Students do **not** need a GitHub account.
+
 Open the notebook directly in Colab:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mizuno-group/latent-demo/blob/v0.2.1/notebooks/01_cmap_estradiol_factor_demo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mizuno-group/latent-demo/blob/v0.2.2/notebooks/01_cmap_estradiol_factor_demo.ipynb)
 
 Recommended instruction for students:
 
@@ -21,23 +23,17 @@ Recommended instruction for students:
 3. Run the cells from top to bottom.
 4. Change only the form inputs unless instructed otherwise.
 
-## Colab installation
+## Development setup in Colab
 
-The notebook installs the package from a tagged GitHub zip:
+During development, the setup cell in the notebook can switch GitHub owner, repo, and branch/tag/commit.
 
-```python
-%pip install -q https://github.com/mizuno-group/latent-demo/archive/refs/tags/v0.2.1.zip
+The important rule is:
+
+```text
+Notebook ref = package install ref
 ```
 
-The reference data `ref_cmap.csv` is bundled inside the package, so students do not need to upload a data file during the standard lecture workflow.
-
-This does not require a student GitHub account when the repository is public.
-
-For development, you can also install from the repository root:
-
-```bash
-pip install -e .
-```
+For example, if the notebook is opened from `main`, install from `main`. If the notebook is opened from `v0.2.2`, install from `v0.2.2`.
 
 ## Repository structure
 
@@ -50,20 +46,12 @@ latent-demo/
 ├── src/
 │   └── latent_demo/
 │       ├── __init__.py
-│       ├── config.py
-│       ├── data.py
 │       ├── cmap.py
+│       ├── data.py
 │       ├── models.py
-│       ├── metrics.py
 │       ├── plots.py
-│       ├── layout.py
-│       ├── workflow.py
-│       ├── datasets/
-│       │   └── ref_cmap.csv
-│       └── scenarios/
-│           ├── pharm_toxicity_basic.yaml
-│           ├── pharm_toxicity_noisy.yaml
-│           └── pharm_toxicity_missing.yaml
+│       └── datasets/
+│           └── ref_cmap.csv
 └── tests/
     └── test_smoke.py
 ```
@@ -75,19 +63,21 @@ The demo uses a reference gene expression signature matrix:
 - rows: genes
 - columns: compounds/samples
 
-Students run the notebook step by step. They first inspect the data shape and head, then compute compound-compound correlations, cluster compounds with DBSCAN, extract varimax-rotated latent factors, and finally inspect the factor where `estradiol` has a high score.
+Students run the notebook step by step. They first inspect the data shape and head, then list compounds whose expression signatures are correlated with a target compound, cluster compounds with DBSCAN, visualize the clusters by t-SNE, extract varimax-rotated latent factors, and inspect the factor where the selected target compound has a high score.
 
-Expected interpretation:
+Expected interpretation when `target_sample="estradiol"`:
 
-- high side of the estradiol-selected factor: estrogen-like compounds such as estradiol, estrone, estriol, equilin, estropipate, dienestrol, and diethylstilbestrol
+- high side of the selected factor: estrogen-like compounds such as estradiol, estrone, estriol, equilin, estropipate, dienestrol, and diethylstilbestrol
 - low side of the same factor: anti-estrogen-related compounds such as tamoxifen, raloxifene, fulvestrant, and clomifene
+
+The target can also be changed to another compound name such as `tamoxifen` or `dexamethasone`.
 
 The teaching focus is not coding. Students mainly:
 
 - run cells,
 - inspect the data matrix,
-- look at compound-compound correlation,
-- interpret DBSCAN clusters,
+- inspect target-correlated compounds,
+- interpret DBSCAN clusters on a t-SNE map,
 - inspect factor scores,
 - compare `n_components=10` and `n_components=40`,
 - discuss why factor number, rotation, and sign orientation matter.
@@ -99,8 +89,8 @@ For Colab speed, the default factor extraction is implemented as:
 1. standardize genes across compounds,
 2. apply randomized PCA,
 3. apply orthogonal varimax rotation,
-4. select the factor with the largest absolute `estradiol` score,
-5. flip the sign so that `estradiol` is positive.
+4. select the factor with the largest absolute target-compound score,
+5. flip the sign so that the target compound is positive.
 
 This is used as a fast exploratory factor-analysis-style workflow. It is intended for lecture demonstration rather than final scientific inference.
 
@@ -112,8 +102,8 @@ Recommended release workflow:
 
 1. Confirm that tests pass.
 2. Push to GitHub under `mizuno-group/latent-demo`.
-3. Create a release tag such as `v0.2.1`.
-4. Use the tagged Colab URL in slides or LMS.
+3. During development, test with `GIT_REF="main"` or a development branch in the setup cell.
+4. For the final lecture handout, create a stable release tag such as `v0.2.2` and use the tagged Colab URL in slides or LMS.
 
 ## Test
 

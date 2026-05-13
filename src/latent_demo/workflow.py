@@ -140,3 +140,168 @@ def compare_factor_numbers(
         plt.show()
         show_question("訓練誤差だけでなく、テスト尤度や解釈性を考えると、因子数はいくつがよさそうですか？")
     return summary
+
+
+# -----------------------------------------------------------------------------
+# CMap / estradiol signature demo workflows
+# -----------------------------------------------------------------------------
+
+from .data import prepare_cmap_data
+from .models import (
+    cluster_compounds_dbscan,
+    compare_cmap_factor_numbers as _compare_cmap_factor_numbers,
+    compute_compound_correlation,
+    fit_cmap_varimax_factors,
+)
+from .plots import (
+    plot_cmap_factor_number_summary,
+    plot_compound_correlation_heatmap,
+    plot_dbscan_pca_scatter,
+    plot_ranked_factor_scores,
+)
+
+
+ESTROGEN_TERMS = [
+    "estradiol",
+    "estrone",
+    "estriol",
+    "estropipate",
+    "diethylstilbestrol",
+    "dienestrol",
+    "equilin",
+    "prasterone",
+]
+
+ANTI_ESTROGEN_TERMS = [
+    "tamoxifen",
+    "raloxifene",
+    "fulvestrant",
+    "clomifene",
+    "mifepristone",
+]
+
+
+def _subset_by_terms(index, terms: list[str]) -> list[str]:
+    return [x for x in index if any(term.lower() in x.lower() for term in terms)]
+
+
+def run_cmap_estradiol_demo(
+    n_top_genes: int = 3000,
+    n_components: int = 40,
+    target_sample: str = "estradiol",
+    top_n: int = 20,
+    dbscan_eps: float = 0.6,
+    dbscan_min_samples: int = 3,
+    show_plots: bool = True,
+):
+    """Run the CMap estradiol-factor demo.
+
+    The default settings are chosen so that an estradiol-high factor tends to
+    rank estrogen-like compounds high and anti-estrogen compounds low.
+    """
+    display_markdown("## 1. セットアップ：パッケージ内蔵データを読み込む")
+    cmap = prepare_cmap_data(n_top_genes=n_top_genes)
+    display_markdown(
+        f"- 使用データ: packaged `ref_cmap.csv`  \\n"
+        f"- genes used: `{cmap.gene_by_compound.shape[0]}`  \\n"
+        f"- compounds/samples: `{cmap.gene_by_compound.shape[1]}`"
+    )
+
+    display_markdown("## 2. データサイズと先頭を確認する")
+    display_dataframe(cmap.gene_by_compound.iloc[:5, :8], max_rows=5)
+    show_question("行が遺伝子、列が化合物です。各値は化合物処理に伴う発現変化シグネチャとみなせます。")
+
+    display_markdown("## 3. 化合物間の相関を見る")
+    correlation = compute_compound_correlation(cmap.compound_by_gene)
+    display_dataframe(correlation.iloc[:8, :8].round(3), max_rows=8)
+    if show_plots:
+        plot_compound_correlation_heatmap(correlation, title="Compound-compound correlation from expression signatures")
+        plt.show()
+    show_question("相関が高い化合物は、遺伝子発現シグネチャが似ている化合物です。ぼんやりした構造は見えるでしょうか？")
+
+    display_markdown("## 4. DBSCANで近い化合物の塊を見る")
+    clusters = cluster_compounds_dbscan(correlation, eps=dbscan_eps, min_samples=dbscan_min_samples)
+    cluster_summary = clusters["cluster"].value_counts().sort_index().rename_axis("cluster").to_frame("n_samples")
+    display_dataframe(cluster_summary, max_rows=len(cluster_summary))
+    if show_plots:
+        plot_dbscan_pca_scatter(
+            cmap.compound_by_gene,
+            clusters,
+            highlight_terms=["estradiol", "estrone", "estriol", "tamoxifen", "raloxifene", "fulvestrant", "clomifene"],
+            title=f"DBSCAN on correlation distance (eps={dbscan_eps}, min_samples={dbscan_min_samples})",
+        )
+        plt.show()
+
+    estrogen_hits = _subset_by_terms(cmap.compound_by_gene.index, ESTROGEN_TERMS)
+    anti_hits = _subset_by_terms(cmap.compound_by_gene.index, ANTI_ESTROGEN_TERMS)
+    display_markdown("### estrogen / anti-estrogen 関連化合物のDBSCAN cluster")
+    if estrogen_hits or anti_hits:
+        key_clusters = clusters.loc[estrogen_hits + anti_hits].copy()
+        key_clusters["category"] = ["estrogen-like"] * len(estrogen_hits) + ["anti-estrogen"] * len(anti_hits)
+        display_dataframe(key_clusters, max_rows=len(key_clusters))
+
+    display_markdown("## 5. Varimax因子抽出で estradiol-high factor を見る")
+    display_markdown(
+        "ここでは Colab 上での速度を優先し、PCAによる初期抽出に varimax 回転をかける高速な探索的因子抽出を用います。"
+    )
+    factor_result = fit_cmap_varimax_factors(
+        cmap.compound_by_gene,
+        n_components=n_components,
+        target_sample=target_sample,
+        n_top_genes=n_top_genes,
+        random_state=0,
+        select_mode="max_abs",
+    )
+    display_markdown(
+        f"- selected factor: `{factor_result.selected_factor}`  \\n"
+        f"- {target_sample} score: `{factor_result.target_score:.3f}`  \\n"
+        f"- n_components: `{n_components}`"
+    )
+
+    top_samples = factor_result.ranked_scores.head(top_n)
+    bottom_samples = factor_result.ranked_scores.tail(top_n).sort_values("factor_score", ascending=True)
+    display_markdown(f"### Top {top_n}: estradiol-high factor")
+    display_dataframe(top_samples.round(3), max_rows=top_n)
+    display_markdown(f"### Bottom {top_n}: opposite side of estradiol-high factor")
+    display_dataframe(bottom_samples.round(3), max_rows=top_n)
+    if show_plots:
+        plot_ranked_factor_scores(
+            factor_result.ranked_scores,
+            top_n=top_n,
+            title=f"Samples ranked by {factor_result.selected_factor} score (target={target_sample})",
+        )
+        plt.show()
+
+    display_markdown("### estrogen-like / anti-estrogen 関連化合物のスコア")
+    if estrogen_hits or anti_hits:
+        key_scores = factor_result.ranked_scores.loc[estrogen_hits + anti_hits].copy()
+        key_scores["category"] = ["estrogen-like"] * len(estrogen_hits) + ["anti-estrogen"] * len(anti_hits)
+        key_scores = key_scores.sort_values("factor_score", ascending=False)
+        display_dataframe(key_scores.round(3), max_rows=len(key_scores))
+    show_question("Top側に estrogen-like な化合物、Bottom側に anti-estrogen が来るでしょうか？")
+
+    return {
+        "cmap": cmap,
+        "correlation": correlation,
+        "clusters": clusters,
+        "factor_result": factor_result,
+        "top_samples": top_samples,
+        "bottom_samples": bottom_samples,
+    }
+
+
+def compare_cmap_factor_numbers_workflow(
+    n_top_genes: int = 3000,
+    component_grid: list[int] | tuple[int, ...] = (5, 10, 20, 40, 60),
+    show_plots: bool = True,
+):
+    """Compare latent factor numbers for the CMap demo."""
+    display_markdown("## 発展：因子数の妥当性を尤度で眺める")
+    cmap = prepare_cmap_data(n_top_genes=n_top_genes)
+    summary = _compare_cmap_factor_numbers(cmap.compound_by_gene, component_grid=component_grid)
+    display_dataframe(summary.round(4), max_rows=len(summary))
+    if show_plots:
+        plot_cmap_factor_number_summary(summary, title="PPCA-like held-out likelihood by component number")
+        plt.show()
+    show_question("再構成誤差だけでなく、テスト対数尤度や解釈性を考えると、因子数はいくつがよさそうでしょうか？")
+    return summary

@@ -96,3 +96,103 @@ def plot_model_selection(summary: pd.DataFrame, title: str = "Model comparison b
     ax1.set_title(title)
     fig.tight_layout()
     return fig
+
+
+# -----------------------------------------------------------------------------
+# CMap expression-signature demo plots
+# -----------------------------------------------------------------------------
+
+
+def plot_compound_correlation_heatmap(
+    correlation: pd.DataFrame,
+    title: str = "Compound-compound correlation",
+    max_labels: int = 30,
+):
+    """Plot a compound-compound correlation heatmap.
+
+    For readability, only a subset of tick labels is shown when many compounds
+    are present.
+    """
+    fig, ax = plt.subplots(figsize=(7.2, 6.4))
+    im = ax.imshow(correlation.to_numpy(), vmin=-1, vmax=1, aspect="auto")
+    n = correlation.shape[0]
+    if n <= max_labels:
+        ticks = np.arange(n)
+    else:
+        ticks = np.linspace(0, n - 1, max_labels).astype(int)
+    ax.set_xticks(ticks)
+    ax.set_yticks(ticks)
+    ax.set_xticklabels(correlation.columns[ticks], rotation=90, fontsize=7)
+    ax.set_yticklabels(correlation.index[ticks], fontsize=7)
+    ax.set_title(title)
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    fig.tight_layout()
+    return fig
+
+
+def plot_dbscan_pca_scatter(
+    compound_by_gene: pd.DataFrame,
+    clusters: pd.DataFrame,
+    highlight_terms: list[str] | None = None,
+    title: str = "DBSCAN clusters on compound signatures",
+):
+    """Plot a 2D PCA view colored by DBSCAN cluster labels."""
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+
+    x_scaled = StandardScaler().fit_transform(compound_by_gene)
+    xy = PCA(n_components=2, random_state=0).fit_transform(x_scaled)
+    plot_df = pd.DataFrame(xy, index=compound_by_gene.index, columns=["PC1", "PC2"]).join(clusters)
+
+    fig, ax = plt.subplots(figsize=(7.2, 5.8))
+    scatter = ax.scatter(plot_df["PC1"], plot_df["PC2"], c=plot_df["cluster"], s=30, alpha=0.85)
+    ax.set_xlabel("PC1")
+    ax.set_ylabel("PC2")
+    ax.set_title(title)
+
+    highlight_terms = highlight_terms or []
+    for sample in plot_df.index:
+        if any(term.lower() in sample.lower() for term in highlight_terms):
+            ax.annotate(sample, (plot_df.loc[sample, "PC1"], plot_df.loc[sample, "PC2"]), fontsize=8)
+
+    fig.colorbar(scatter, ax=ax, fraction=0.046, pad=0.04, label="DBSCAN cluster")
+    fig.tight_layout()
+    return fig
+
+
+def plot_ranked_factor_scores(
+    ranked_scores: pd.DataFrame,
+    top_n: int = 20,
+    title: str = "Top and bottom samples on selected factor",
+):
+    """Plot top and bottom compounds by selected factor score."""
+    score_col = "factor_score"
+    top = ranked_scores.head(top_n).copy()
+    bottom = ranked_scores.tail(top_n).sort_values(score_col, ascending=True).copy()
+    plot_df = pd.concat([top.assign(group="Top"), bottom.assign(group="Bottom")])
+    plot_df = plot_df.sort_values(score_col, ascending=True)
+
+    fig, ax = plt.subplots(figsize=(8.0, max(5.0, 0.26 * len(plot_df))))
+    ax.barh(plot_df.index, plot_df[score_col])
+    ax.axvline(0, linewidth=1)
+    ax.set_xlabel("factor score")
+    ax.set_title(title)
+    fig.tight_layout()
+    return fig
+
+
+def plot_cmap_factor_number_summary(
+    summary: pd.DataFrame,
+    title: str = "Factor number comparison",
+):
+    """Plot held-out likelihood and reconstruction error by factor number."""
+    fig, ax1 = plt.subplots(figsize=(7.0, 4.8))
+    ax1.plot(summary["n_components"], summary["train_reconstruction_mse"], marker="o", label="train reconstruction MSE")
+    ax1.set_xlabel("number of components")
+    ax1.set_ylabel("train reconstruction MSE")
+    ax2 = ax1.twinx()
+    ax2.plot(summary["n_components"], summary["test_log_likelihood"], marker="s", label="test log-likelihood")
+    ax2.set_ylabel("test log-likelihood")
+    ax1.set_title(title)
+    fig.tight_layout()
+    return fig

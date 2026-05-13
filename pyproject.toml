@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "latent-demo"
-version = "0.1.0"
-description = "Small Colab demos for latent variables and latent representations"
+version = "0.2.1"
+description = "Small Colab demos for latent variables and compound expression signatures"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
@@ -27,4 +27,4 @@ Repository = "https://github.com/mizuno-group/latent-demo"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"latent_demo" = ["scenarios/*.yaml"]
+"latent_demo" = ["scenarios/*.yaml", "datasets/*.csv"]

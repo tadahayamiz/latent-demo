@@ -109,3 +109,77 @@ def generate_synthetic_data(cfg: dict[str, Any]) -> GeneratedData:
         variable_ids=variable_ids,
         factor_ids=factor_ids,
     )
+
+
+# -----------------------------------------------------------------------------
+# CMap expression-signature demo utilities
+# -----------------------------------------------------------------------------
+
+from importlib import resources
+
+
+@dataclass(frozen=True)
+class CMapData:
+    """Container for CMap-like reference expression signatures.
+
+    Attributes
+    ----------
+    gene_by_compound:
+        Original matrix with genes as rows and compounds as columns.
+    compound_by_gene:
+        Transposed matrix used for analysis: compounds as rows and genes as columns.
+    selected_genes:
+        Genes retained after variance filtering.
+    """
+
+    gene_by_compound: pd.DataFrame
+    compound_by_gene: pd.DataFrame
+    selected_genes: list[str]
+
+
+def get_ref_cmap_path() -> str:
+    """Return the packaged ``ref_cmap.csv`` path.
+
+    The CSV is intentionally bundled inside the package so that students do not
+    need to upload any data file during the Colab exercise.
+    """
+    ref = resources.files("latent_demo").joinpath("datasets", "ref_cmap.csv")
+    return str(ref)
+
+
+def load_ref_cmap(csv_path: str | None = None) -> pd.DataFrame:
+    """Load the reference CMap-like expression signature table.
+
+    The returned DataFrame has genes as rows and compounds/samples as columns.
+    """
+    path = csv_path or get_ref_cmap_path()
+    df = pd.read_csv(path, index_col=0)
+    df = df.apply(pd.to_numeric, errors="coerce")
+    df = df.dropna(axis=0, how="any")
+    return df
+
+
+def prepare_cmap_data(
+    csv_path: str | None = None,
+    n_top_genes: int | None = 3000,
+    variance_filter: bool = True,
+) -> CMapData:
+    """Load and optionally variance-filter expression signatures.
+
+    Parameters
+    ----------
+    csv_path:
+        Optional external CSV path. If omitted, the packaged dataset is used.
+    n_top_genes:
+        Number of high-variance genes to retain. ``None`` keeps all genes.
+    variance_filter:
+        If true, retain the genes with the largest variance across compounds.
+    """
+    df = load_ref_cmap(csv_path)
+    if variance_filter and n_top_genes is not None and n_top_genes < df.shape[0]:
+        selected = df.var(axis=1).sort_values(ascending=False).head(n_top_genes).index.tolist()
+        df_use = df.loc[selected].copy()
+    else:
+        selected = df.index.tolist()
+        df_use = df.copy()
+    return CMapData(gene_by_compound=df_use, compound_by_gene=df_use.T.copy(), selected_genes=selected)
